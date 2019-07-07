@@ -205,9 +205,9 @@ void setup()
     ac.begin();
     loadConfigFile();
 
-
+    String apName = String("ESP-COOLIX-") + APP_VERSION;
     wifiManager.setAPStaticIPConfig(IPAddress(10, 0, 1, 1), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
-    wifiManager.autoConnect("ESP-COOLIX-1", "12341234"); // IMPORTANT! Blocks execution. Waits until connected
+    wifiManager.autoConnect(apName.c_str(), "12341234"); // IMPORTANT! Blocks execution. Waits until connected
 
     // Wait for WIFI connection
 
