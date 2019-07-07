@@ -284,8 +284,7 @@ void loop()
     button.read();
 
     // Ensure the connection to the MQTT server is alive (this will make the first
-    // connection and automatically reconnect when disconnected).  See the MQTT_connect
-    // function definition further below.
+    // connection and automatically reconnect when disconnected).  See the MQTT_connect()
     MQTT_connect();
     
     
