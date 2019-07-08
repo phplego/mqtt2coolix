@@ -1,5 +1,6 @@
 
 #include <Arduino.h>
+#include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 #include <FS.h>
 #include <WiFiManager.h>
@@ -12,7 +13,7 @@
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>
 
-#define APP_VERSION 2
+#define APP_VERSION 4
 
 #define MQTT_HOST "192.168.1.2"  // MQTT host (e.g. m21.cloudmqtt.com)
 #define MQTT_PORT 11883          // MQTT port (e.g. 18076)
@@ -20,6 +21,8 @@
 #define MQTT_PASS "change-me"    // Ingored if brocker allows guest connection
 
 #define DEVICE_ID "electrolux_ac"
+
+#define WIFI_HOSTNAME "esp-ir-coolix"
 
 const uint16_t kIrLed = 4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
 
@@ -203,9 +206,12 @@ void setup()
     Serial.begin(115200, SERIAL_8N1, SERIAL_TX_ONLY);
     
     ac.begin();
+    
+    // Load config
     loadConfigFile();
 
-    String apName = String("ESP-COOLIX-") + APP_VERSION;
+    String apName = String(WIFI_HOSTNAME) + "-v" + APP_VERSION;
+    WiFi.hostname(apName);
     wifiManager.setAPStaticIPConfig(IPAddress(10, 0, 1, 1), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
     wifiManager.autoConnect(apName.c_str(), "12341234"); // IMPORTANT! Blocks execution. Waits until connected
 
@@ -273,6 +279,9 @@ void setup()
         ac.send(1);         // send IR
         publishState();     // publish to mqtt
     });
+
+    ArduinoOTA.begin();
+
 }
 
 
@@ -281,6 +290,7 @@ long    publishInterval = 60*1000;
 
 void loop()
 {
+    ArduinoOTA.handle();
     button.read();
 
     // Ensure the connection to the MQTT server is alive (this will make the first
