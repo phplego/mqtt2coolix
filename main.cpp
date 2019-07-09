@@ -14,7 +14,7 @@
 
 #include "TemperatureService.h"
 
-#define APP_VERSION 5
+#define APP_VERSION 6
 
 #define MQTT_HOST "192.168.1.2"  // MQTT host (e.g. m21.cloudmqtt.com)
 #define MQTT_PORT 11883          // MQTT port (e.g. 18076)
@@ -36,9 +36,11 @@ Adafruit_MQTT_Client mqtt(&client, MQTT_HOST, MQTT_PORT);   // MQTT client
 
 
 // Setup MQTT topics
-String input_topic  = String() + "mqtt2coolix/" + DEVICE_ID + "/set";
+String set_topic    = String() + "mqtt2coolix/" + DEVICE_ID + "/set";
+String cmd_topic    = String() + "mqtt2coolix/" + DEVICE_ID + "/cmd";
 String output_topic = String() + "mqtt2coolix/" + DEVICE_ID;
-Adafruit_MQTT_Subscribe mqtt_subscribe      = Adafruit_MQTT_Subscribe   (&mqtt, input_topic.c_str(), MQTT_QOS_1);
+Adafruit_MQTT_Subscribe mqtt_sub_set        = Adafruit_MQTT_Subscribe   (&mqtt, set_topic.c_str(), MQTT_QOS_1);
+Adafruit_MQTT_Subscribe mqtt_sub_cmd        = Adafruit_MQTT_Subscribe   (&mqtt, cmd_topic.c_str(), MQTT_QOS_1);
 Adafruit_MQTT_Publish   mqtt_publish        = Adafruit_MQTT_Publish     (&mqtt, output_topic.c_str());
 
 
@@ -113,11 +115,11 @@ void setup()
     Serial.println(WiFi.localIP());
 
 
-    // Setup MQTT subscription for set_state topic.
-    mqtt.subscribe(&mqtt_subscribe);
+    // Setup MQTT subscription for the 'set' topic.
+    mqtt.subscribe(&mqtt_sub_set);
 
     // Send IR impulses on received MQTT message in the 'set' topic
-    mqtt_subscribe.setCallback([](char *str, uint16_t len){
+    mqtt_sub_set.setCallback([](char *str, uint16_t len){
 
         char buf [len + 1];
         buf[len] = 0;
@@ -160,7 +162,7 @@ void setup()
         // Publish AC state to MQTT
         publishState();
 
-        // Saving state to persistent storage (will be restored on reboot)
+        // Saving state to persistent storage (because state will be restored on reboot)
 
         DynamicJsonDocument json(JSON_SIZE);
         json["temp"]   = ac.getTemp();
@@ -169,6 +171,21 @@ void setup()
         json["power"]  = ac.getPower();
         saveConfig(gConfigFile, json);
 
+    });
+
+    // Setup MQTT subscription for the 'cmd' topic.
+    mqtt.subscribe(&mqtt_sub_cmd);
+
+    // Execute commands
+    mqtt_sub_cmd.setCallback([](char *str, uint16_t len){
+
+        char buf [len + 1];
+        buf[len] = 0;
+        strncpy(buf, str, len);
+
+        if(String("restart").equals(buf)){
+            ESP.restart();
+        }
     });
 
 
