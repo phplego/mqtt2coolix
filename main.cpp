@@ -13,6 +13,8 @@
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>
 
+#include "TemperatureService.h"
+
 #define APP_VERSION 4
 
 #define MQTT_HOST "192.168.1.2"  // MQTT host (e.g. m21.cloudmqtt.com)
@@ -58,6 +60,9 @@ IRCoolixAC ac(kIrLed);
 
 EasyButton button(0); // 0 - Flash button
 
+TemperatureService temperatureService;
+
+
 // Function to connect and reconnect as necessary to the MQTT server.
 // Should be called in the loop function and it will take care if connecting.
 void MQTT_connect() {
@@ -87,19 +92,23 @@ void MQTT_connect() {
 
 void publishState()
 {
-    StaticJsonBuffer<1024> jsonBuffer;
-    JsonObject& stateJson = jsonBuffer.createObject();
-    
-    stateJson["temp"]   = ac.getTemp();
-    stateJson["mode"]   = ac.getMode();
-    stateJson["fan"]    = ac.getFan();
-    stateJson["power"]  = ac.getPower();
-    stateJson["memory"] = system_get_free_heap_size();
-    stateJson["uptime"] = millis() / 1000;
-    stateJson["version"]    = APP_VERSION;
+    Serial.println("publishState()");
+    const int JSON_SIZE = 1024;
 
-    char jsonStr[jsonBuffer.size()];
-    stateJson.prettyPrintTo(jsonStr, jsonBuffer.size());
+    DynamicJsonDocument doc(JSON_SIZE);
+
+    doc["temp"]   = ac.getTemp();
+    doc["mode"]   = ac.getMode();
+    doc["fan"]    = ac.getFan();
+    doc["power"]  = ac.getPower();
+    // doc["memory"] = system_get_free_heap_size();
+    doc["uptime"] = millis() / 1000;
+    doc["temp_out"] = TemperatureService::instance->getTemperature(0);
+    doc["version"]  = APP_VERSION;
+
+    char jsonStr[JSON_SIZE * 2];
+
+    serializeJsonPretty(doc, jsonStr);
 
     // Publish state to output topic
     mqtt_publish.publish(jsonStr);
@@ -128,10 +137,11 @@ bool mountSpiffs(void) {
 const char* gConfigFile = "/config.json";
 
 bool saveConfig(void) {
+    const int JSON_SIZE = 1024;
+
     Serial.println("Saving the config.");
     bool success = false;
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
+    DynamicJsonDocument json(JSON_SIZE);
     json["temp"]   = ac.getTemp();
     json["mode"]   = ac.getMode();
     json["fan"]    = ac.getFan();
@@ -143,7 +153,7 @@ bool saveConfig(void) {
             Serial.println("Failed to open config file for writing.");
         } else {
             Serial.println("Writing out the config file.");
-            json.printTo(configFile);
+            serializeJson(json, configFile);
             configFile.close();
             Serial.println("Finished writing config file.");
             success = true;
@@ -165,15 +175,18 @@ bool loadConfigFile(void) {
             Serial.println("Opened config file");
             size_t size = configFile.size();
             // Allocate a buffer to store contents of the file.
-            std::unique_ptr<char[]> buf(new char[size]);
+            std::unique_ptr<char[]> buf(new char[size+1]);
+            memset(buf.get(), '\0', size+1);
 
             configFile.readBytes(buf.get(), size);
             Serial.print("Config file content:");
             Serial.println(buf.get());
 
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& json = jsonBuffer.parseObject(buf.get());
-            if (json.success()) {
+            const int JSON_SIZE = 1024;
+
+            DynamicJsonDocument json(JSON_SIZE);
+            DeserializationError error = deserializeJson(json, buf.get());
+            if (!error) {
                 Serial.println("Json config file parsed ok.");
 
                 ac.setTemp(json["temp"]);
@@ -232,12 +245,19 @@ void setup()
     // Setup MQTT subscription for set_state topic.
     mqtt.subscribe(&mqtt_subscribe);
 
+    // Send IR impulses on received MQTT message in the 'set' topic
     mqtt_subscribe.setCallback([](char *str, uint16_t len){
-        Serial.println(String("Got mqtt message: ") + str);
+        std::unique_ptr<char[]> buf(new char[len + 1]);
+        memset(buf.get(), '\0', len + 1);
+        strncpy(buf.get(), str, len);
+        Serial.println(String("Got mqtt message: ") + buf.get());
 
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& root = jsonBuffer.parseObject(str);
+        const int JSON_SIZE = 1024;
 
+        DynamicJsonDocument root(JSON_SIZE);
+        DeserializationError error = deserializeJson(root, buf.get());
+        
+        if(error) return;
 
         if(root.containsKey("temp"))
             ac.setTemp(root["temp"]);           // 17..30  
@@ -280,6 +300,8 @@ void setup()
         publishState();     // publish to mqtt
     });
 
+    temperatureService.init(D5);
+
     ArduinoOTA.begin();
 
 }
@@ -292,6 +314,7 @@ void loop()
 {
     ArduinoOTA.handle();
     button.read();
+    temperatureService.loop();
 
     // Ensure the connection to the MQTT server is alive (this will make the first
     // connection and automatically reconnect when disconnected).  See the MQTT_connect()
@@ -303,7 +326,7 @@ void loop()
 
     
     // publish state every X seconds
-    if(millis() > lastPublishTime + publishInterval){
+    if((!lastPublishTime && TemperatureService::instance->temperatures[0] > 0) || millis() > lastPublishTime + publishInterval){
         // do the publish
         publishState();
         lastPublishTime = millis();
