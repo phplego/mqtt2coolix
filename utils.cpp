@@ -45,51 +45,61 @@ bool mountSpiffs(void) {
   return true;  // Success!
 }
 
-
-bool loadConfig(const char * filename, void onLoadCallback(DynamicJsonDocument))
+String fileGetContents(const char * filename)
 {
-    bool success = false;
+    String contents = "";
     if (mountSpiffs()) {
-        Serial.println("Counted the file system");
         if (SPIFFS.exists(filename)) {
-            Serial.println("Config file exists");
 
-            File configFile = SPIFFS.open(filename, "r");
-            if (configFile) {
+            File theFile = SPIFFS.open(filename, "r");
+            if (theFile) {
                 Serial.println("Opened config file");
-                size_t size = configFile.size();
+                size_t size = theFile.size();
                 // Allocate a buffer to store contents of the file.
                 char buf[size+1];
                 buf[size] = 0;
 
-                configFile.readBytes(buf, size);
-                Serial.print("Config file content:");
-                Serial.println(buf);
+                theFile.readBytes(buf, size);
 
-                const int JSON_SIZE = 1024;
+                contents = buf;
 
-                DynamicJsonDocument json(JSON_SIZE);
-                DeserializationError error = deserializeJson(json, buf);
-                if (!error) {
-                    Serial.println("Json config file parsed ok.");
-
-                    // run onLoadCallback
-                    onLoadCallback(json);
-                    
-                    success = true;
-                } else {
-                    Serial.println("Failed to load json config");
-                }
-                Serial.println("Closing the config file.");
-                configFile.close();
+                theFile.close();
             }
         } else {
-            Serial.println("Config file doesn't exist!");
+            Serial.println(String("File '") + filename + "' doesn't exist!");
         }
         Serial.println("Unmounting SPIFFS.");
         SPIFFS.end();
     }
-    return success;
+    return contents;
+}
+
+
+bool loadConfig(const char * filename, void onLoadCallback(DynamicJsonDocument))
+{
+    bool success = false;
+
+    String text = fileGetContents(filename);
+
+    if(text == "") 
+        return false;
+
+    const int JSON_SIZE = 1024;
+
+    DynamicJsonDocument json(JSON_SIZE);
+    DeserializationError error = deserializeJson(json, text);
+    if (!error) {
+        Serial.println("Json config file parsed ok.");
+
+        // run onLoadCallback
+        onLoadCallback(json);
+        
+        return true;
+    } else {
+        Serial.println("Failed to load json config");
+        return false;
+    }    
+
 }
 
 

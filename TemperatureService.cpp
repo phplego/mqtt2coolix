@@ -67,13 +67,13 @@ void TemperatureService::loop()
     if ( now - lastUpdateTime > interval ) { // Take a measurement at a fixed time (tempMeasInterval = 1000ms, 1s)
 
         for (int i = 0; i < DS18B20->getDeviceCount(); i++) {
-            temperatures[i] = this->DS18B20->getTempC( addresses[i] ); // Measuring temperature in Celsius and save the measured value to the array
+            float temp = this->DS18B20->getTempC( addresses[i] );   // Measuring temperature in Celsius
+            temperatures[i] = round(temp * 10) / 10;                // save the measured value to the array
             Serial.print(String() +  i + ") " + getAddressToString(addresses[i]) + " = " + temperatures[i] + " ºC \t");
         }
         Serial.println(String(" dev count: ") + DS18B20->getDeviceCount()) ;
 
         // const int JSON_SIZE = 300;
-
 
         // // send temperatures as json to web socket
         // StaticJsonBuffer<JSON_SIZE> jsonBuffer;

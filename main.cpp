@@ -186,6 +186,14 @@ void setup()
         if(String("restart").equals(buf)){
             ESP.restart();
         }
+        if(String("swing").equals(buf)){
+            ac.setSwing();
+            ac.send(1);
+        }
+        if(String("turbo").equals(buf)){
+            ac.setTurbo();
+            ac.send(1);
+        }
     });
 
 
@@ -236,8 +244,4 @@ void loop()
 
 
 }
-
-
-
-
 
