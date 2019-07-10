@@ -14,7 +14,7 @@
 
 #include "TemperatureService.h"
 
-#define APP_VERSION 6
+#define APP_VERSION 7
 
 #define MQTT_HOST "192.168.1.2"  // MQTT host (e.g. m21.cloudmqtt.com)
 #define MQTT_PORT 11883          // MQTT port (e.g. 18076)

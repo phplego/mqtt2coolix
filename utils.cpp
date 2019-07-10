@@ -15,8 +15,11 @@ String getContentType(String filename) { // determine the filetype of a given fi
     return "text/plain";
 }
 
-//------------------------------------------
-//Convert device id to String
+
+// Convert DeviceAddress object to String
+//
+// Returns:
+//      A String containing device address.
 String getAddressToString(DeviceAddress deviceAddress) {
     String str = "";
     for (uint8_t i = 0; i < 8; i++) {
@@ -31,20 +34,25 @@ String getAddressToString(DeviceAddress deviceAddress) {
 //
 // Returns:
 //   A boolean indicating success or failure.
-bool mountSpiffs(void) {
-  Serial.println("Mounting SPIFFS...");
-  if (SPIFFS.begin()) return true;  // We mounted it okay.
-  // We failed the first time.
-  Serial.println("Failed to mount SPIFFS!\nFormatting SPIFFS and trying again...");
-  SPIFFS.format();
-  if (!SPIFFS.begin()) {  // Did we fail?
-    Serial.println("DANGER: Failed to mount SPIFFS even after formatting!");
-    delay(1000);  // Make sure the debug message doesn't just float by.
-    return false;
-  }
-  return true;  // Success!
+bool mountSpiffs(void)
+{
+    Serial.println("Mounting SPIFFS...");
+    if (SPIFFS.begin())
+        return true; // We mounted it okay.
+    // We failed the first time.
+    Serial.println("Failed to mount SPIFFS!\nFormatting SPIFFS and trying again...");
+    SPIFFS.format();
+    if (!SPIFFS.begin()){ // Did we fail?
+        Serial.println("DANGER: Failed to mount SPIFFS even after formatting!");
+        delay(1000); // Make sure the debug message doesn't just float by.
+        return false;
+    }
+    return true; // Success!
 }
 
+/**
+ * Returns contents of the file or empty string on fail.
+ */
 String fileGetContents(const char * filename)
 {
     String contents = "";
