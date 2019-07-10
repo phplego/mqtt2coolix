@@ -36,10 +36,18 @@ float Queue<S>::average(){
 
 template <int S>
 float Queue<S>::min(){
-    return 0.0;
+    float res = this->values[0];
+    for(float v: this->values){
+        res = ::min(res, v);
+    }
+    return res;
 }
 
 template <int S>
 float Queue<S>::max(){
-    return 0.0;
+    float res = this->values[0];
+    for(float v: this->values){
+        res = ::max(res, v);
+    }
+    return res;
 }

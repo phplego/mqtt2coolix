@@ -196,7 +196,7 @@ void setup()
         }
     });
 
-
+    // Onboard button pressed (for testing purposes)
     button.onPressed([](){
         Serial.println("Flash button pressed!");
         Serial.println(ac.toString());
