@@ -4,6 +4,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "utils.h"
+#include "Queue.h"
 
 #define ONE_WIRE_MAX_DEV    15                              // The maximum number of devices
 
@@ -28,7 +29,8 @@ class TemperatureService {
         // Array of measured values
         float               temperatures[ONE_WIRE_MAX_DEV]; // Saving the last measurement of temperature
         
-
+        // Array of Queues
+        Queue<10>           queues [ONE_WIRE_MAX_DEV];
 
         OneWire*            oneWire;
         DallasTemperature*  DS18B20;

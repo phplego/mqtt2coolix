@@ -22,7 +22,7 @@ void TemperatureService::init(int _pin)
     Serial.print("DS18B20 device count: ");
     Serial.println(DS18B20->getDeviceCount());
     for (int i = 0; i < DS18B20->getDeviceCount(); i++) {
-        // save device's address
+        // save device address
         DS18B20->getAddress(addresses[i], i);
         Serial.println(String("device: ") + getAddressToString(addresses[i]));
     }
@@ -39,7 +39,8 @@ float TemperatureService::getTemperature(int deviceIndex)
         return 0.0;
     }
 
-    return temperatures[deviceIndex];
+    //return this->temperatures[deviceIndex];
+    return this->queues[deviceIndex].average();
 }
 
 
@@ -67,26 +68,15 @@ void TemperatureService::loop()
     if ( now - lastUpdateTime > interval ) { // Take a measurement at a fixed time (tempMeasInterval = 1000ms, 1s)
 
         for (int i = 0; i < DS18B20->getDeviceCount(); i++) {
-            float temp = this->DS18B20->getTempC( addresses[i] );   // Measuring temperature in Celsius
-            temperatures[i] = round(temp * 10) / 10;                // save the measured value to the array
-            Serial.print(String() +  i + ") " + getAddressToString(addresses[i]) + " = " + temperatures[i] + " ºC \t");
+            float temp = this->DS18B20->getTempC( addresses[i] );           // Measuring temperature in Celsius
+            this->temperatures[i] = round(temp * 10) / 10;                  // save the measured value to the array
+
+            this->queues[i].add(temp);                                      // Add to queue
+
+            Serial.print(String() +  i + ") " + getAddressToString(addresses[i]) + " = " + this->temperatures[i] + " ºC \t");
         }
         Serial.println(String(" dev count: ") + DS18B20->getDeviceCount()) ;
 
-        // const int JSON_SIZE = 300;
-
-        // // send temperatures as json to web socket
-        // StaticJsonBuffer<JSON_SIZE> jsonBuffer;
-        // JsonObject& jsonRoot = jsonBuffer.createObject();
-        // JsonObject& jsonTemperatures = jsonRoot.createNestedObject("temperatures");
-
-        // for (int i = 0; i < DS18B20->getDeviceCount(); i++) {
-        //     jsonTemperatures[getAddressToString(addresses[i])] = temperatures[i];
-        // }
-
-        // char jsonStr[JSON_SIZE];
-        // jsonRoot.prettyPrintTo(jsonStr, JSON_SIZE);
-        //WebSocketService::instance->webSocket->broadcastTXT(jsonStr);        
 
         // request next measurement
         this->DS18B20->setWaitForConversion(false); //No waiting for measurement
