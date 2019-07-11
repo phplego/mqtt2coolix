@@ -52,27 +52,25 @@ TemperatureService temperatureService;  // Temperature measurement service
 void publishState()
 {
     Serial.println("publishState()");
-    const int JSON_SIZE = 1024;
 
-    DynamicJsonDocument doc(JSON_SIZE);
+    String jsonStr1 = "";
 
-    doc["temp"]   = ac.getTemp();
-    doc["mode"]   = ac.getMode();
-    doc["fan"]    = ac.getFan();
-    doc["power"]  = ac.getPower();
-    // doc["memory"] = system_get_free_heap_size();
-    doc["uptime"] = millis() / 1000;
-    doc["temp_out"] = TemperatureService::instance->getTemperature(0);
-    doc["version"]  = APP_VERSION;
-
-    char jsonStr[JSON_SIZE * 2];
-
-    serializeJsonPretty(doc, jsonStr);
+    jsonStr1 += "{";
+    jsonStr1 += "\"temp\": " + String(ac.getTemp()) + ", ";
+    jsonStr1 += "\"mode\": " + String(ac.getMode()) + ", ";
+    jsonStr1 += "\"fan\": " + String(ac.getFan()) + ", ";
+    jsonStr1 += "\"power\": " + String(ac.getPower()) + ", ";
+    //jsonStr1 += "\"memory\": " + String(system_get_free_heap_size()) + ", ";
+    jsonStr1 += "\"uptime\": " + String(millis() / 1000) + ", ";
+    jsonStr1 += "\"temp_out\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_OUT)) + ", ";
+    jsonStr1 += "\"temp_in\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_IN)) + ", ";
+    jsonStr1 += "\"version\": \"" + String(APP_VERSION) + "\"";
+    jsonStr1 += "}";
 
     // Publish state to output topic
-    mqtt_publish.publish(jsonStr);
+    mqtt_publish.publish(jsonStr1.c_str());
     Serial.print("MQTT published: ");
-    Serial.println(jsonStr);
+    Serial.println(jsonStr1);
 }
 
 

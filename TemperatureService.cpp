@@ -1,6 +1,6 @@
 #include "TemperatureService.h"
-
-const char *    TemperatureService::ADDRESS_OUT            = "28ee3577911302da";
+                                                                                
+const char *    TemperatureService::ADDRESS_OUT            = "28afa4459207029e";
 const char *    TemperatureService::ADDRESS_IN             = "282c4445920e0245";
 
 TemperatureService* TemperatureService::instance = NULL;
