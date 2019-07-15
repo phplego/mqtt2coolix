@@ -54,10 +54,6 @@ ChangesDetector<10> changesDetector;
 long    lastPublishTime             = 0;
 long    publishInterval             = 60*1000;
 
-long    lastUserActivityTime        = 0;
-long    userActivityPublishInterval = 10*1000;
-long    userActivityPublishDuration = 60*1000;
-
 
 void publishState()
 {
@@ -138,9 +134,6 @@ void setup()
     // Send IR impulses on received MQTT message in the 'set' topic
     mqtt_sub_set.setCallback([](char *str, uint16_t len){
 
-        // Suppose that command is user activity (means more often measurements after that)
-        lastUserActivityTime = millis();
-
         char buf [len + 1];
         buf[len] = 0;
         strncpy(buf, str, len);
@@ -198,9 +191,6 @@ void setup()
 
     // Execute commands
     mqtt_sub_cmd.setCallback([](char *str, uint16_t len){
-
-        // Suppose that command is user activity (means more often measurements after that)
-        lastUserActivityTime = millis();
 
         char buf [len + 1];
         buf[len] = 0;
@@ -271,17 +261,6 @@ void loop()
         // do the publish
         publishState();
     }
-
-
-    // publish state every userActivityPublishInterval if user is active now (doing something: send commands or set values)
-    // if(millis() < lastUserActivityTime + userActivityPublishDuration)  // todo: explain
-    // { 
-    //     if(millis() > lastPublishTime + userActivityPublishInterval)    // todo: explain
-    //     {
-    //         // do the publish
-    //         publishState();
-    //     }
-    // }
 
 
 
