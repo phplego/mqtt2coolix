@@ -13,13 +13,14 @@
 #include <Adafruit_MQTT_Client.h>
 
 #include "TemperatureService.h"
+#include "ChangesDetector.h"
 
-#define APP_VERSION 7
+#define APP_VERSION 8
 
-#define MQTT_HOST "192.168.1.2"  // MQTT host (e.g. m21.cloudmqtt.com)
-#define MQTT_PORT 11883          // MQTT port (e.g. 18076)
-#define MQTT_USER "change-me"    // Ingored if brocker allows guest connection
-#define MQTT_PASS "change-me"    // Ingored if brocker allows guest connection
+#define MQTT_HOST "192.168.1.157"   // MQTT host (e.g. m21.cloudmqtt.com)
+#define MQTT_PORT 11883             // MQTT port (e.g. 18076)
+#define MQTT_USER "change-me"       // Ingored if brocker allows guest connection
+#define MQTT_PASS "change-me"       // Ingored if brocker allows guest connection
 
 #define DEVICE_ID       "electrolux_ac"  // Used for MQTT topics
 #define WIFI_HOSTNAME   "esp-ir-coolix"  // Name of WiFi network
@@ -44,9 +45,18 @@ Adafruit_MQTT_Subscribe mqtt_sub_cmd        = Adafruit_MQTT_Subscribe   (&mqtt, 
 Adafruit_MQTT_Publish   mqtt_publish        = Adafruit_MQTT_Publish     (&mqtt, output_topic.c_str());
 
 
-EasyButton button(0);                   // 0 - Flash button
-IRCoolixAC ac(kIrLed);                  // Air conditioner
-TemperatureService temperatureService;  // Temperature measurement service
+EasyButton          button(0);              // 0 - Flash button
+IRCoolixAC          ac(kIrLed);             // Air conditioner
+TemperatureService  temperatureService;     // Temperature measurement service
+ChangesDetector<10> changesDetector;
+
+
+long    lastPublishTime             = 0;
+long    publishInterval             = 60*1000;
+
+long    lastUserActivityTime        = 0;
+long    userActivityPublishInterval = 10*1000;
+long    userActivityPublishDuration = 60*1000;
 
 
 void publishState()
@@ -69,9 +79,18 @@ void publishState()
 
     // Publish state to output topic
     mqtt_publish.publish(jsonStr1.c_str());
+
+    // Remember publish time
+    lastPublishTime = millis();
+
+    // Remember published temperatures (to detect changes)
+    changesDetector.remember();
+
     Serial.print("MQTT published: ");
     Serial.println(jsonStr1);
 }
+
+
 
 
 
@@ -119,11 +138,15 @@ void setup()
     // Send IR impulses on received MQTT message in the 'set' topic
     mqtt_sub_set.setCallback([](char *str, uint16_t len){
 
+        // Suppose that command is user activity (means more often measurements after that)
+        lastUserActivityTime = millis();
+
         char buf [len + 1];
         buf[len] = 0;
         strncpy(buf, str, len);
 
-        Serial.println(String("Got mqtt message: ") + buf);
+        Serial.println(String("Got mqtt SET message: ") + buf);
+
 
         const int JSON_SIZE = 1024;
 
@@ -143,7 +166,6 @@ void setup()
 
         if(root.containsKey("power"))
             ac.setPower(root["power"]);         // true or false
-        
 
         Serial.println("Send COOLIX..");
 
@@ -177,9 +199,14 @@ void setup()
     // Execute commands
     mqtt_sub_cmd.setCallback([](char *str, uint16_t len){
 
+        // Suppose that command is user activity (means more often measurements after that)
+        lastUserActivityTime = millis();
+
         char buf [len + 1];
         buf[len] = 0;
         strncpy(buf, str, len);
+        
+        Serial.println(String("Got mqtt CMD message: ") + buf);
 
         if(String("restart").equals(buf)){
             ESP.restart();
@@ -204,19 +231,30 @@ void setup()
 
     temperatureService.init(D5);
 
+    // Provide values to ChangesDetecter
+    changesDetector.setGetValuesCallback([](float buf[]){
+        buf[0] = temperatureService.getTemperature(0);
+        buf[1] = temperatureService.getTemperature(1);
+    });
+
+    // Publish state on changes detected
+    changesDetector.setChangesDetectedCallback([](){
+        publishState();
+    });
+
     ArduinoOTA.begin();
 
 }
 
 
-long    lastPublishTime = 0;
-long    publishInterval = 60*1000;
+
 
 void loop()
 {
     ArduinoOTA.handle();
     button.read();
     temperatureService.loop();
+    changesDetector.loop();
 
     // Ensure the connection to the MQTT server is alive (this will make the first
     // connection and automatically reconnect when disconnected).  See the MQTT_connect()
@@ -227,12 +265,25 @@ void loop()
     mqtt.processPackets(10);
 
     
-    // publish state every X seconds
-    if((!lastPublishTime && TemperatureService::instance->temperatures[0] > 0) || millis() > lastPublishTime + publishInterval){
+    // publish state every publishInterval milliseconds
+    if((!lastPublishTime && TemperatureService::instance->ready) || millis() > lastPublishTime + publishInterval)
+    {
         // do the publish
         publishState();
-        lastPublishTime = millis();
     }
+
+
+    // publish state every userActivityPublishInterval if user is active now (doing something: send commands or set values)
+    // if(millis() < lastUserActivityTime + userActivityPublishDuration)  // todo: explain
+    // { 
+    //     if(millis() > lastPublishTime + userActivityPublishInterval)    // todo: explain
+    //     {
+    //         // do the publish
+    //         publishState();
+    //     }
+    // }
+
+
 
     // WARNING! .ping() causes error "dropped a packet". Disabled. Waiting for library update
     // keep the connection alive

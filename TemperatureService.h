@@ -23,6 +23,9 @@ class TemperatureService {
         int                 interval            = 1000;     // 1 second by default
         long                lastUpdateTime      = 0;
 
+        // Is the first measurement done
+        bool                ready               = false;    
+
         // Array of device addresses
         DeviceAddress       addresses[ONE_WIRE_MAX_DEV];     // An array device temperature sensors
 

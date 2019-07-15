@@ -29,6 +29,7 @@ void TemperatureService::init(int _pin)
 
     this->DS18B20->setWaitForConversion(true);  // Wait for measurement
     this->DS18B20->requestTemperatures();       // Initiate the temperature measurement
+    this->ready = true;
 }
 
 
@@ -82,6 +83,6 @@ void TemperatureService::loop()
         this->DS18B20->setWaitForConversion(false); //No waiting for measurement
         this->DS18B20->requestTemperatures();       //Initiate the temperature measurement
         
-        lastUpdateTime = millis();                  //Remember the last time measurement
+        lastUpdateTime  = millis();                 //Remember the last time measurement
     }
 }
