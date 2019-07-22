@@ -15,7 +15,7 @@
 #include "TemperatureService.h"
 #include "ChangesDetector.h"
 
-#define APP_VERSION 8
+#define APP_VERSION "1.9"
 
 #define MQTT_HOST "192.168.1.157"   // MQTT host (e.g. m21.cloudmqtt.com)
 #define MQTT_PORT 11883             // MQTT port (e.g. 18076)
@@ -72,6 +72,9 @@ void publishState()
     jsonStr1 += "\"temp_in\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_IN)) + ", ";
     jsonStr1 += "\"version\": \"" + String(APP_VERSION) + "\"";
     jsonStr1 += "}";
+
+    // Ensure mqtt connection
+    MQTT_connect(&mqtt);
 
     // Publish state to output topic
     mqtt_publish.publish(jsonStr1.c_str());
