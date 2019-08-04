@@ -15,7 +15,7 @@
 #include "TemperatureService.h"
 #include "ChangesDetector.h"
 
-#define APP_VERSION "1.9"
+#define APP_VERSION "1.91"
 
 #define MQTT_HOST "192.168.1.157"   // MQTT host (e.g. m21.cloudmqtt.com)
 #define MQTT_PORT 11883             // MQTT port (e.g. 18076)
@@ -23,7 +23,6 @@
 #define MQTT_PASS "change-me"       // Ingored if brocker allows guest connection
 
 #define DEVICE_ID       "electrolux_ac"  // Used for MQTT topics
-#define WIFI_HOSTNAME   "esp-ir-coolix"  // Name of WiFi network
 
 const char* gConfigFile = "/config.json";
 
@@ -112,8 +111,10 @@ void setup()
         Serial.println("AC state recovered from json.");
     });
 
-    String apName = String(WIFI_HOSTNAME) + "-v" + APP_VERSION;
+    String apName = String("esp-") + DEVICE_ID + "-v" + APP_VERSION + "-" + ESP.getChipId();
+    apName.replace('.', '_');
     WiFi.hostname(apName);
+
     wifiManager.setAPStaticIPConfig(IPAddress(10, 0, 1, 1), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
     wifiManager.autoConnect(apName.c_str(), "12341234"); // IMPORTANT! Blocks execution. Waits until connected
 
