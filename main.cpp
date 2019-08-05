@@ -13,6 +13,7 @@
 #include <Adafruit_MQTT_Client.h>
 
 #include "TemperatureService.h"
+#include "WebService.h"
 #include "ChangesDetector.h"
 
 #define APP_VERSION "1.91"
@@ -44,9 +45,10 @@ Adafruit_MQTT_Subscribe mqtt_sub_cmd        = Adafruit_MQTT_Subscribe   (&mqtt, 
 Adafruit_MQTT_Publish   mqtt_publish        = Adafruit_MQTT_Publish     (&mqtt, output_topic.c_str());
 
 
-EasyButton          button(0);              // 0 - Flash button
-IRCoolixAC          ac(kIrLed);             // Air conditioner
-TemperatureService  temperatureService;     // Temperature measurement service
+EasyButton          button(0);                // 0 - Flash button
+IRCoolixAC          ac(kIrLed);               // Air conditioner
+WebService          webService(&wifiManager); // HTTP service
+TemperatureService  temperatureService;       // Temperature measurement service
 ChangesDetector<10> changesDetector;
 
 
@@ -223,6 +225,7 @@ void setup()
         publishState();     // publish to mqtt
     });
 
+    webService.init();
     temperatureService.init(D5);
 
     // Provide values to ChangesDetecter
@@ -247,6 +250,7 @@ void loop()
 {
     ArduinoOTA.handle();
     button.read();
+    webService.loop();
     temperatureService.loop();
     changesDetector.loop();
 

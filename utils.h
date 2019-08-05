@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <DallasTemperature.h>
 #include <Adafruit_MQTT_Client.h>
 
