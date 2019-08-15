@@ -153,8 +153,7 @@ void MQTT_connect(Adafruit_MQTT_Client * mqtt) {
         delay(1000);  // wait X seconds
         retries--;
         if (retries == 0) {
-            // basically die and restart the ESP
-            ESP.restart();
+            return;
         }
     }
     Serial.println("MQTT Connected!");

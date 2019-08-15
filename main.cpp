@@ -248,6 +248,13 @@ void setup()
 
 void loop()
 {
+    if (!WiFi.isConnected())
+    {
+        Serial.println("No WiFi connection.. wait for 3 sec and skip loop");
+        delay(3000);
+        return;
+    }
+
     ArduinoOTA.handle();
     button.read();
     webService.loop();
