@@ -1,7 +1,10 @@
 #include "TemperatureService.h"
                                                                                 
+//const char *    TemperatureService::ADDRESS_OUT            = "28afa4459207029e";
+//const char *    TemperatureService::ADDRESS_IN             = "282c4445920e0245";
+
 const char *    TemperatureService::ADDRESS_OUT            = "28afa4459207029e";
-const char *    TemperatureService::ADDRESS_IN             = "282c4445920e0245";
+const char *    TemperatureService::ADDRESS_IN             = "2838c145920c024a"; // on board (stick)
 
 TemperatureService* TemperatureService::instance = NULL;
 
@@ -58,7 +61,7 @@ int TemperatureService::getDeviceIndex(const char * sensorAddress)
             return i;
         }
     }
-    return 0;
+    return -1;
 }
 
 void TemperatureService::loop()

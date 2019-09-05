@@ -6,6 +6,7 @@
 #include <FS.h>
 #include "utils.h"
 #include "TemperatureService.h"
+#include "Globals.h"
 
 
 

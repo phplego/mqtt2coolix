@@ -83,7 +83,7 @@ String fileGetContents(const char * filename)
 }
 
 
-bool loadConfig(const char * filename, void onLoadCallback(DynamicJsonDocument))
+bool loadConfig(const char * filename, std::function<void(DynamicJsonDocument)> onLoadCallback)
 {
     bool success = false;
 
@@ -111,6 +111,7 @@ bool loadConfig(const char * filename, void onLoadCallback(DynamicJsonDocument))
 }
 
 
+
 bool saveConfig(const char * filename, DynamicJsonDocument json) 
 {
     Serial.println("Saving the config.");
@@ -132,6 +133,23 @@ bool saveConfig(const char * filename, DynamicJsonDocument json)
     return success;
 }
 
+bool saveConfig(const char * filename, String jsonStr) 
+{
+    bool success = false;
+
+    if (mountSpiffs()) {
+        File configFile = SPIFFS.open(filename, "w");
+        if (!configFile) {
+            Serial.println("Failed to open config file for writing.");
+        } else {
+            configFile.write(jsonStr.c_str());
+            configFile.close();
+            success = true;
+        }
+        SPIFFS.end();
+    }
+    return success;
+}
 
 // Function to connect and reconnect as necessary to the MQTT server.
 // Should be called in the loop function and it will take care if connecting.

@@ -29,12 +29,47 @@ void WebService::init()
         server->send(200, "text/html; charset=utf-8", str);     
     });
 
-    // Test route
-    this->server->on("/hello", [this](){
-        server->send(200, "text/html", "Hello! I'm air conditioner.");     
+    // Edit config
+    this->server->on("/config", [this](){
+
+        if(this->server->method() == HTTP_POST){
+            String newContent = this->server->arg("content");
+            saveConfig("/config.json", newContent);
+            server->sendHeader("Location", String("/config"), true);
+            server->send ( 302, "text/plain", "");
+            return;
+        }
+
+
+        loadConfig("/config.json", [this](DynamicJsonDocument json){
+            String content;
+            serializeJson(json, content);
+
+            String output = "";
+            output += "<form method='post'>";
+            output += "<textarea name='content' cols=80 rows=10>";
+            output += content;
+            output += "</textarea>";
+            output += "</br>";
+            output += "<input type='submit'>";
+            output += "</form>";
+            server->send(200, "text/html", output);
+        });
+    });
+    
+    // Toggle MQTT listening (On/Off)
+    this->server->on("/toggle-mqtt", [this](){
+        if(this->server->method() == HTTP_POST){
+            Globals::mqttEnabled = !Globals::mqttEnabled;
+            this->server->send(200, "text/html", String("OK! ") + (Globals::mqttEnabled? "enabled" : "disabled"));
+        }
+        else{
+            this->server->send(400, "text/html", "<form method='post'><button>Toggle</button></form>");
+        }
     });
 
-    // Logout
+
+    // Logout (reset wifi settings)
     this->server->on("/logout", [this](){
         if(this->server->method() == HTTP_POST){
             this->server->send(200, "text/html", "OK");
@@ -72,6 +107,8 @@ void WebService::init()
 
 bool WebService::handleFileRead(String path)
 {
+    SPIFFS.begin();
+
     Serial.println("handleFileRead: " + path);
     if (path.endsWith("/")) path += "index.html";               // If a folder is requested, send the index file
     String contentType = getContentType(path);                  // Get the MIME type

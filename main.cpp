@@ -15,8 +15,9 @@
 #include "TemperatureService.h"
 #include "WebService.h"
 #include "ChangesDetector.h"
+#include "Globals.h"
 
-#define APP_VERSION "1.91"
+#define APP_VERSION "1.93"
 
 #define MQTT_HOST "192.168.1.157"   // MQTT host (e.g. m21.cloudmqtt.com)
 #define MQTT_PORT 11883             // MQTT port (e.g. 18076)
@@ -27,7 +28,7 @@
 
 const char* gConfigFile = "/config.json";
 
-const uint16_t kIrLed = 4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
+const uint16_t kIrLed = 2;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
 
 IRsend irsend(kIrLed);      // Set the GPIO to be used to sending the message.
 
@@ -226,7 +227,8 @@ void setup()
     });
 
     webService.init();
-    temperatureService.init(D5);
+    //temperatureService.init(D5);
+    temperatureService.init(0);
 
     // Provide values to ChangesDetecter
     changesDetector.setGetValuesCallback([](float buf[]){
@@ -261,22 +263,25 @@ void loop()
     temperatureService.loop();
     changesDetector.loop();
 
-    // Ensure the connection to the MQTT server is alive (this will make the first
-    // connection and automatically reconnect when disconnected).  See the MQTT_connect()
-    MQTT_connect(&mqtt);
-    
-    
-    // wait X milliseconds for subscription messages
-    mqtt.processPackets(10);
-
-    
-    // publish state every publishInterval milliseconds
-    if((!lastPublishTime && TemperatureService::instance->ready) || millis() > lastPublishTime + publishInterval)
+    // Somtimes it is required to disable MQTT listening without switching off the device 
+    if(Globals::mqttEnabled)
     {
-        // do the publish
-        publishState();
-    }
+        // Ensure the connection to the MQTT server is alive (this will make the first
+        // connection and automatically reconnect when disconnected).  See the MQTT_connect()
+        MQTT_connect(&mqtt);
+        
+        
+        // wait X milliseconds for subscription messages
+        mqtt.processPackets(10);
 
+        
+        // publish state every publishInterval milliseconds
+        if((!lastPublishTime && TemperatureService::instance->ready) || millis() > lastPublishTime + publishInterval)
+        {
+            // do the publish
+            publishState();
+        }
+    }
 
 
     // WARNING! .ping() causes error "dropped a packet". Disabled. Waiting for library update
