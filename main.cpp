@@ -6,7 +6,6 @@
 #include <EasyButton.h>
 
 #include <IRremoteESP8266.h>
-#include <IRsend.h>
 #include <ir_Coolix.h>
 
 #include <Adafruit_MQTT.h>
@@ -26,11 +25,11 @@
 
 #define DEVICE_ID       "electrolux_ac"  // Used for MQTT topics
 
+#define PIN_TSENSR 0 // Pin connected to DS18B20 temperature sensors
+#define PIN_IR_LED 2 // Pin connected to IR-diode
+
 const char* gConfigFile = "/config.json";
 
-const uint16_t kIrLed = 2;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
-
-IRsend irsend(kIrLed);      // Set the GPIO to be used to sending the message.
 
 WiFiManager wifiManager;                                    // WiFi Manager
 WiFiClient client;                                          // WiFi Client
@@ -47,7 +46,7 @@ Adafruit_MQTT_Publish   mqtt_publish        = Adafruit_MQTT_Publish     (&mqtt, 
 
 
 EasyButton          button(0);                // 0 - Flash button
-IRCoolixAC          ac(kIrLed);               // Air conditioner
+IRCoolixAC          ac(PIN_IR_LED);           // Air conditioner
 WebService          webService(&wifiManager); // HTTP service
 TemperatureService  temperatureService;       // Temperature measurement service
 ChangesDetector<10> changesDetector;
@@ -97,9 +96,6 @@ void publishState()
 
 void setup()
 {
-
-    delay(10);
-    irsend.begin();
     Serial.begin(115200, SERIAL_8N1, SERIAL_TX_ONLY);
     
     ac.begin();
@@ -228,7 +224,7 @@ void setup()
 
     webService.init();
     //temperatureService.init(D5);
-    temperatureService.init(0);
+    temperatureService.init(PIN_TSENSR);
 
     // Provide values to ChangesDetecter
     changesDetector.setGetValuesCallback([](float buf[]){

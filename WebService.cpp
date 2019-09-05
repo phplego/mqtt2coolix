@@ -9,8 +9,18 @@ WebService::WebService(WiFiManager* _wifiManager)
 
 void WebService::init()
 {
-    this->server->on("/", [this](){
-        String str = "<pre>"; 
+    String menu;
+    menu += "<div>";
+    menu += "<a href='/'>index</a> ";
+    menu += "<a href='/toggle-mqtt'>toggle-mqtt</a> ";
+    menu += "<a href='/config'>config</a> ";
+    menu += "<a href='/logout'>logout</a> ";
+    menu += "</div><hr>";
+
+    this->server->on("/", [this, menu](){
+        String str = ""; 
+        str += menu;
+        str += "<pre>";
         str += String() + "  Temperature  IN: " + TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_IN) + " ºC \n";
         str += String() + "  Temperature OUT: " + TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_OUT) + " ºC \n";
         str += "\n";
@@ -30,7 +40,7 @@ void WebService::init()
     });
 
     // Edit config
-    this->server->on("/config", [this](){
+    this->server->on("/config", [this, menu](){
 
         if(this->server->method() == HTTP_POST){
             String newContent = this->server->arg("content");
@@ -40,12 +50,12 @@ void WebService::init()
             return;
         }
 
-
-        loadConfig("/config.json", [this](DynamicJsonDocument json){
+        loadConfig("/config.json", [this, menu](DynamicJsonDocument json){
             String content;
             serializeJson(json, content);
 
             String output = "";
+            output += menu;
             output += "<form method='post'>";
             output += "<textarea name='content' cols=80 rows=10>";
             output += content;
@@ -58,25 +68,39 @@ void WebService::init()
     });
     
     // Toggle MQTT listening (On/Off)
-    this->server->on("/toggle-mqtt", [this](){
+    this->server->on("/toggle-mqtt", [this, menu](){
         if(this->server->method() == HTTP_POST){
             Globals::mqttEnabled = !Globals::mqttEnabled;
-            this->server->send(200, "text/html", String("OK! ") + (Globals::mqttEnabled? "enabled" : "disabled"));
+            this->server->send(200, "text/html", menu + String("OK! ") + (Globals::mqttEnabled? "enabled" : "disabled"));
         }
         else{
-            this->server->send(400, "text/html", "<form method='post'><button>Toggle</button></form>");
+            String output = "";
+            output += menu;
+            output += "MQTT is ";
+            output += (Globals::mqttEnabled ? "enabled" : "disabled");
+            output += "<form method='post'><button>Toggle</button></form>";
+            this->server->send(400, "text/html", output);
         }
     });
 
 
     // Logout (reset wifi settings)
-    this->server->on("/logout", [this](){
+    this->server->on("/logout", [this, menu](){
         if(this->server->method() == HTTP_POST){
             this->server->send(200, "text/html", "OK");
             this->wifiManager->resetSettings();
+            ESP.reset();
         }
         else{
-            this->server->send(400, "text/html", "post method only");
+            String output = "";
+            output += menu;
+            output += String() + "<pre>";
+            output += String() + "Wifi network: " + WiFi.SSID() + " \n";
+            output += String() + "        RSSI: " + WiFi.RSSI() + " \n";
+            output += String() + "    hostname: " + WiFi.hostname() + " \n";
+            output += String() + "</pre>";
+            output += "<form method='post'><button>Forget</button></form>";
+            this->server->send(400, "text/html", output);
         }
     });
 
