@@ -2,7 +2,9 @@
 
 class Globals {
     public:
-        static bool mqttEnabled;
+        static bool         mqttEnabled;
+        static const char * appVersion;
+
 };
 
 

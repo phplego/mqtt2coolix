@@ -16,7 +16,6 @@
 #include "ChangesDetector.h"
 #include "Globals.h"
 
-#define APP_VERSION "1.93"
 
 #define MQTT_HOST "192.168.1.157"   // MQTT host (e.g. m21.cloudmqtt.com)
 #define MQTT_PORT 11883             // MQTT port (e.g. 18076)
@@ -29,6 +28,9 @@
 #define PIN_IR_LED 2 // Pin connected to IR-diode
 
 const char* gConfigFile = "/config.json";
+
+const char *    Globals::appVersion     = "1.94";
+bool            Globals::mqttEnabled    = true;
 
 
 WiFiManager wifiManager;                                    // WiFi Manager
@@ -71,7 +73,7 @@ void publishState()
     jsonStr1 += "\"uptime\": " + String(millis() / 1000) + ", ";
     jsonStr1 += "\"temp_out\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_OUT)) + ", ";
     jsonStr1 += "\"temp_in\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_IN)) + ", ";
-    jsonStr1 += "\"version\": \"" + String(APP_VERSION) + "\"";
+    jsonStr1 += "\"version\": \"" + String(Globals::appVersion) + "\"";
     jsonStr1 += "}";
 
     // Ensure mqtt connection
@@ -110,7 +112,7 @@ void setup()
         Serial.println("AC state recovered from json.");
     });
 
-    String apName = String("esp-") + DEVICE_ID + "-v" + APP_VERSION + "-" + ESP.getChipId();
+    String apName = String("esp-") + DEVICE_ID + "-v" + Globals::appVersion + "-" + ESP.getChipId();
     apName.replace('.', '_');
     WiFi.hostname(apName);
 

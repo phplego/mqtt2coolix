@@ -25,6 +25,7 @@ void WebService::init()
         str += String() + "  Temperature OUT: " + TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_OUT) + " ºC \n";
         str += "\n";
         
+        str += String() + " Firmware Version: " + Globals::appVersion + " \n";
         str += String() + "           Uptime: " + (millis() / 1000) + " \n";
         str += String() + "      FullVersion: " + ESP.getFullVersion() + " \n";
         str += String() + "      ESP Chip ID: " + ESP.getChipId() + " \n";
@@ -35,7 +36,7 @@ void WebService::init()
         str += String() + "  FreeSketchSpace: " + ESP.getFreeSketchSpace() + " \n";
         str += String() + "    FlashChipSize: " + ESP.getFlashChipSize() + " \n";
         str += String() + "FlashChipRealSize: " + ESP.getFlashChipRealSize() + " \n";
-        str += "</pre>";
+        str += "</pre>"; 
         server->send(200, "text/html; charset=utf-8", str);     
     });
 
