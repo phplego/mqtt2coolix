@@ -29,7 +29,7 @@
 
 const char* gConfigFile = "/config.json";
 
-const char *    Globals::appVersion     = "1.94";
+const char *    Globals::appVersion     = "1.96";
 bool            Globals::mqttEnabled    = true;
 
 
@@ -117,14 +117,15 @@ void setup()
     WiFi.hostname(apName);
 
     wifiManager.setAPStaticIPConfig(IPAddress(10, 0, 1, 1), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
+    //wifiManager.setConnectTimeout(20);
+    wifiManager.setConfigPortalTimeout(60);
     wifiManager.autoConnect(apName.c_str(), "12341234"); // IMPORTANT! Blocks execution. Waits until connected
 
-    // Wait for WIFI connection
+    // restart if not connected
 
-    while (WiFi.status() != WL_CONNECTED)
+    if (WiFi.status() != WL_CONNECTED)
     {
-        delay(10);
-        Serial.print(".");
+        ESP.restart();
     }
 
     Serial.print("\nConnected to ");
