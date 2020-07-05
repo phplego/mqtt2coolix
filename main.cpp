@@ -29,7 +29,7 @@
 
 const char* gConfigFile = "/config.json";
 
-const char *    Globals::appVersion     = "1.96";
+const char *    Globals::appVersion     = "1.97";
 bool            Globals::mqttEnabled    = true;
 
 
@@ -62,19 +62,18 @@ void publishState()
 {
     Serial.println("publishState()");
 
-    String jsonStr1 = "";
-
-    jsonStr1 += "{";
-    jsonStr1 += "\"temp\": " + String(ac.getTemp()) + ", ";
-    jsonStr1 += "\"mode\": " + String(ac.getMode()) + ", ";
-    jsonStr1 += "\"fan\": " + String(ac.getFan()) + ", ";
-    jsonStr1 += "\"power\": " + String(ac.getPower()) + ", ";
-    //jsonStr1 += "\"memory\": " + String(system_get_free_heap_size()) + ", ";
-    jsonStr1 += "\"uptime\": " + String(millis() / 1000) + ", ";
-    jsonStr1 += "\"temp_out\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_OUT)) + ", ";
-    jsonStr1 += "\"temp_in\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_IN)) + ", ";
-    jsonStr1 += "\"version\": \"" + String(Globals::appVersion) + "\"";
-    jsonStr1 += "}";
+    String jsonStr1 = String("{")  
+        + "\"temp\": " + String(ac.getTemp()) + ","
+        + "\"mode\": " + String(ac.getMode()) + ","
+        + "\"fan\": " + String(ac.getFan()) + ","
+        + "\"power\": " + String(ac.getPower()) + ","
+    // + "\"memory\": " + String(system_get_free_heap_size()) + ","
+        + "\"up\": " + String(millis() / 1000) + ","
+        + "\"temp_out\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_OUT)) + ","
+        + "\"temp_in\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_IN)) + ","
+        + "\"temp_brd\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_BOARD)) + ","
+        + "\"ver\": \"" + String(Globals::appVersion) + "\""
+        + "}";
 
     // Ensure mqtt connection
     MQTT_connect(&mqtt);

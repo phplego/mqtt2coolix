@@ -3,8 +3,10 @@
 //const char *    TemperatureService::ADDRESS_OUT            = "28afa4459207029e";
 //const char *    TemperatureService::ADDRESS_IN             = "282c4445920e0245";
 
-const char *    TemperatureService::ADDRESS_OUT            = "28afa4459207029e";
-const char *    TemperatureService::ADDRESS_IN             = "2838c145920c024a"; // on board (stick)
+const char *    TemperatureService::ADDRESS_OUT            = "28afa4459207029e"; // Output air t sernsor
+const char *    TemperatureService::ADDRESS_BOARD          = "2838c145920c024a"; // on board t sensor
+const char *    TemperatureService::ADDRESS_IN             = "282522459205027d"; // Input air t sensor
+
 
 TemperatureService* TemperatureService::instance = NULL;
 

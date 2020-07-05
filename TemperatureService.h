@@ -15,6 +15,7 @@ class TemperatureService {
         static TemperatureService* instance;
         static const char *    ADDRESS_OUT;
         static const char *    ADDRESS_IN;
+        static const char *    ADDRESS_BOARD;
 
         // One wire pin, connected to the sensors
         int                 pin;
