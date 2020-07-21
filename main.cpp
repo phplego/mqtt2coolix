@@ -114,6 +114,7 @@ void setup()
     String apName = String("esp-") + DEVICE_ID + "-v" + Globals::appVersion + "-" + ESP.getChipId();
     apName.replace('.', '_');
     WiFi.hostname(apName);
+    wifi_set_sleep_type(NONE_SLEEP_T); // prevent wifi sleep (stronger connection)
 
     wifiManager.setAPStaticIPConfig(IPAddress(10, 0, 1, 1), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
     //wifiManager.setConnectTimeout(20);
