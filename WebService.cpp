@@ -14,6 +14,7 @@ void WebService::init()
     menu += "<a href='/'>index</a> ";
     menu += "<a href='/toggle-mqtt'>toggle-mqtt</a> ";
     menu += "<a href='/config'>config</a> ";
+    menu += "<a href='/restart'>restart</a> ";
     menu += "<a href='/logout'>logout</a> ";
     menu += "</div><hr>";
 
@@ -23,6 +24,7 @@ void WebService::init()
         str += "<pre>";
         str += String() + "  Temperature  IN: " + TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_IN) + " ºC \n";
         str += String() + "  Temperature OUT: " + TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_OUT) + " ºC \n";
+        str += String() + "  Temperature BRD: " + TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_BOARD) + " ºC \n";
         str += "\n";
         
         str += String() + " Firmware Version: " + Globals::appVersion + " \n";
@@ -83,6 +85,22 @@ void WebService::init()
             this->server->send(400, "text/html", output);
         }
     });
+
+
+    this->server->on("/restart", [this, menu](){
+        if(this->server->method() == HTTP_POST){
+            this->server->sendHeader("Location", "/",true);   //Redirect to index  
+            this->server->send(200, "text/html", "<script> setTimeout(()=> document.location = '/', 5000) </script> restarting ESP ...");
+
+            ESP.restart();
+        }
+        else{
+            String output = "";
+            output += menu;
+            output += "<form method='post'><button>Restart ESP</button></form>";
+            this->server->send(200, "text/html", output);
+        }
+    });    
 
 
     // Logout (reset wifi settings)

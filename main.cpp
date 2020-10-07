@@ -284,12 +284,5 @@ void loop()
     }
 
 
-    // WARNING! .ping() causes error "dropped a packet". Disabled. Waiting for library update
-    // keep the connection alive
-    // if(! mqtt.ping()) {
-    //     mqtt.disconnect();
-    // }
-
-
 }
 
