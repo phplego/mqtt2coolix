@@ -29,7 +29,7 @@
 
 const char* gConfigFile = "/config.json";
 
-const char *    Globals::appVersion     = "1.97";
+const char *    Globals::appVersion     = "1.98";
 bool            Globals::mqttEnabled    = true;
 
 
@@ -111,7 +111,7 @@ void setup()
         Serial.println("AC state recovered from json.");
     });
 
-    String apName = String("esp-") + DEVICE_ID + "-v" + Globals::appVersion + "-" + ESP.getChipId();
+    String apName = String("esp-") + DEVICE_ID + "-" + ESP.getChipId();
     apName.replace('.', '_');
     WiFi.hostname(apName);
     wifi_set_sleep_type(NONE_SLEEP_T); // prevent wifi sleep (stronger connection)
@@ -231,8 +231,9 @@ void setup()
 
     // Provide values to ChangesDetecter
     changesDetector.setGetValuesCallback([](float buf[]){
-        buf[0] = temperatureService.getTemperature(0);
-        buf[1] = temperatureService.getTemperature(1);
+        buf[0] = temperatureService.getTemperatureByAddress(TemperatureService::ADDRESS_OUT);
+        buf[1] = temperatureService.getTemperatureByAddress(TemperatureService::ADDRESS_IN);
+        buf[2] = temperatureService.getTemperatureByAddress(TemperatureService::ADDRESS_BOARD);
     });
 
     // Publish state on changes detected
