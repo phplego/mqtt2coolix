@@ -57,6 +57,44 @@ ChangesDetector<10> changesDetector;
 long    lastPublishTime             = 0;
 long    publishInterval             = 60*1000;
 
+// 0 - cool, 1 - dry, 2 - auto, 3 - heat, 4 - fan
+String ARR_MODES [] = {"cool", "dry", "auto", "heat", "fan_only"};
+
+int mode2id(String mode)
+{
+    // 0 - cool, 1 - dry, 2 - auto, 3 - heat, 4 - fan
+    if(mode == "0" || mode == "cool")
+        return (kCoolixCool); // 0          
+    if(mode == "1" || mode == "dry")
+        return (kCoolixDry);  // 1          
+    if(mode == "2" || mode == "auto")
+        return (kCoolixAuto); // 2          
+    if(mode == "3" || mode == "heat")
+        return (kCoolixHeat); // 3          
+    if(mode == "4" || mode == "fan" || mode == "fan_only")
+        return (kCoolixFan);  // 4          
+    return -1;
+}
+
+String modeId2mode(uint8_t id)
+{
+    switch (id)
+    {
+        case kCoolixCool: return "cool";
+        case kCoolixDry:  return "dry";
+        case kCoolixAuto: return "auto";
+        case kCoolixHeat: return "heat";
+        case kCoolixFan:  return "fan_only";
+    }
+    return String("unknown_mode") + id;
+}
+
+
+int getModeId(String mode)
+{
+    //for(int i = 0; i < sizeof())
+    return 0;
+}
 
 void publishState()
 {
@@ -64,15 +102,15 @@ void publishState()
 
     String jsonStr1 = String("{")  
         + "\"temp\": " + String(ac.getTemp()) + ","
-        + "\"mode\": " + String(ac.getMode()) + ","
+        + "\"mode\": \"" + modeId2mode(ac.getMode()) + "\","
         + "\"fan\": " + String(ac.getFan()) + ","
         + "\"power\": " + String(ac.getPower()) + ","
     // + "\"memory\": " + String(system_get_free_heap_size()) + ","
         + "\"up\": " + String(millis() / 1000) + ","
         + "\"temp_out\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_OUT)) + ","
         + "\"temp_in\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_IN)) + ","
-        + "\"temp_brd\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_BOARD)) + ","
-        + "\"ver\": \"" + String(Globals::appVersion) + "\""
+        + "\"temp_brd\": " + String(TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_BOARD)) /*+ ","*/
+        //+ "\"ver\": \"" + String(Globals::appVersion) + "\""
         + "}";
 
     // Ensure mqtt connection
@@ -158,14 +196,24 @@ void setup()
         if(root.containsKey("temp"))
             ac.setTemp(root["temp"]);           // 17..30  
 
-        if(root.containsKey("mode"))
-            ac.setMode(root["mode"]);           kCoolixCool; // 0 - cool, 1 - dry, 2 - auto, 3 - heat, 4 - fan
+        if(root.containsKey("mode")){
+            String mode = root["mode"].as<String>();
+            ac.setMode(mode2id(mode));
+        }
 
         if(root.containsKey("fan"))
             ac.setFan(root["fan"]);             kCoolixFanAuto; // 0 - auto0,  1 - max, 2 - med, 4 - min, 5 - auto
 
-        if(root.containsKey("power"))
-            ac.setPower(root["power"]);         // true or false
+        if(root.containsKey("power")){
+            String power = root["power"].as<String>();
+            power.toLowerCase();
+            if(power == "on" || power == "1" || power == "true"){
+                ac.setPower(true);
+            }
+            if(power == "off" || str == "0" || power == "false"){
+                ac.setPower(false);
+            }
+        }
 
         Serial.println("Send COOLIX..");
 
@@ -186,7 +234,7 @@ void setup()
 
         DynamicJsonDocument json(JSON_SIZE);
         json["temp"]   = ac.getTemp();
-        json["mode"]   = ac.getMode();
+        json["mode"]   = modeId2mode(ac.getMode());
         json["fan"]    = ac.getFan();
         json["power"]  = ac.getPower();
         saveConfig(gConfigFile, json);
